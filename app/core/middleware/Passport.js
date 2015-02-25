@@ -14,17 +14,15 @@ passport.use(new BasicStrategy({},
         // asynchronous verification, for effect...
         process.nextTick(function () {
 
-            var userOutput = {};
+            var user = {};
 
             UserService.findByEmail(email)
-                .then(function (user) {
-                    if (!user) {
+                .then(function (result) {
+                    if (!result) {
                         return false;
                     }
 
-                    userOutput.email = user.email;
-                    userOutput.username = user.username;
-
+                    user = result;
                     return {
                         hash:     user.password,
                         password: password
@@ -32,11 +30,20 @@ passport.use(new BasicStrategy({},
                 })
                 .then(UserService.comparePassword)
                 .then(function (result) {
-                    if (!result) {
+                    return (result) ? user : false;
+                })
+                .then(UserService.buildAccessTokenForUser)
+                .then(function (user) {
+                    if (!user) {
                         return done(null, false);
                     } else {
                         // SUCCESS
-                        return done(null, userOutput);
+                        return done(null, user);
+                        //{
+                        //    username:    user.username,
+                        //    email:       user.email,
+                        //    accessToken: user.accessToken
+                        //});
                     }
                 })
                 .catch(done);

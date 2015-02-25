@@ -51,13 +51,16 @@ var AuthController = {
             .catch(function (err) {
                 res.badRequest(err);
             });
-        
+
 
     },
 
     login: function (req, res) {
-        console.log('55');
-        res.json({username: req.user.username, email: req.user.email});
+        res.ok({
+            username:    req.user.username,
+            email:       req.user.email,
+            accessToken: req.user.accessToken
+        });
     },
 
     logout: function (req, res) {

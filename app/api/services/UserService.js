@@ -87,16 +87,35 @@ module.exports = {
         });
     },
 
-    /**
-     *
-     * @param data {String} email:password
-     * @returns {*}
-     */
-    generateToken: function (data) {
-        var random = Math.floor(Math.random() * 100001);
-        var timestamp = (new Date()).getTime();
-        var sha256 = crypto.createHmac("sha256", random + "WOO" + timestamp);
-        return sha256.update(data).digest("base64");
+    generateToken: generateToken,
+
+    buildAccessTokenForUser: function (user) {
+        return new Promise(function (resolve, reject) {
+            if(!user){
+                reject('Unauthorized');
+            }
+
+            var newAccessToken = generateToken();
+            User.findById(user.id, function (err, user) {
+
+                if (err){
+                    reject(err);
+                }
+
+                if(!user){
+                    reject('Unauthorized');
+                }
+
+                user.accessToken = newAccessToken;
+                user.save(function (err) {
+                    if (err){
+                        reject(err);
+                    }
+
+                    resolve(user);
+                });
+            });
+        });
     },
 
 
@@ -134,3 +153,17 @@ module.exports = {
     }
 
 };
+
+
+/**
+ *
+ * @param data {String} email:password
+ * @returns {*}
+ */
+function generateToken(data) {
+    data = data || 'TheBubu:Secret';
+    var random = Math.floor(Math.random() * 100001);
+    var timestamp = (new Date()).getTime();
+    var sha256 = crypto.createHmac("sha256", random + "WOO" + timestamp);
+    return sha256.update(data).digest("base64");
+}
