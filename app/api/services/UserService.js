@@ -72,11 +72,11 @@ module.exports = {
                     }
 
                     var unique = [];
-                    if(results[0]!== null){
+                    if (results[0] !== null) {
                         unique.push('username');
                     }
 
-                    if(results[1]!== null){
+                    if (results[1] !== null) {
                         unique.push('email');
                     }
 
@@ -103,9 +103,9 @@ module.exports = {
     cipherPassword: function (password) {
         var scope = this;
         return new Promise(function (resolve, reject) {
-            bcrypt.genSalt(10, function(err, salt) {
-                bcrypt.hash(password, salt, function(err, hash) {
-                    if(err){
+            bcrypt.genSalt(10, function (err, salt) {
+                bcrypt.hash(password, salt, function (err, hash) {
+                    if (err) {
                         return reject(err);
                     }
 
@@ -115,24 +115,21 @@ module.exports = {
         });
     },
 
-    comparePassword: function (id, password) {
-        var scope = this;
+    comparePassword: function (obj) {
+        if (!obj) {
+            return false;
+        }
+
+        var password = obj.password;
+        var hash = obj.hash;
         return new Promise(function (resolve, reject) {
-            scope.findById(id)
-                .then(function (user) {
-                    if(!user){
-                        return reject(null);
-                    }
+            bcrypt.compare(password, hash, function (err, result) {
+                if (err) {
+                    return reject(err);
+                }
 
-                    bcrypt.compare(password, user.password, function (err, result) {
-                        if (err) {
-                            return reject(err);
-                        }
-
-                        resolve(result);
-                    });
-                })
-                .catch(reject);
+                resolve(result);
+            });
         });
     }
 

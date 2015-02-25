@@ -66,7 +66,7 @@ app.use('/api', MiddleWareRouter);
 app.all('/api', function (req, res, next) {
     // set origin policy etc so cross-domain access wont be an issue
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With,  Content-Type, Accept");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Authorization, Content-Type, Accept");
     next();
 });
 
