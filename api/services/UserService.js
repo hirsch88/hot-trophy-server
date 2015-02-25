@@ -91,29 +91,32 @@ module.exports = {
 
     buildAccessTokenForUser: function (user) {
         return new Promise(function (resolve, reject) {
-            if(!user){
-                reject('Unauthorized');
+            console.log(user);
+            if (!user) {
+                return reject(null);
             }
 
             var newAccessToken = generateToken();
             User.findById(user.id, function (err, user) {
 
-                if (err){
-                    reject(err);
+                if (err) {
+                    return reject(err);
                 }
 
-                if(!user){
-                    reject('Unauthorized');
+                if (!user) {
+                    return reject(null);
                 }
 
                 user.accessToken = newAccessToken;
+                user.accessTimestamp = new Date();
                 user.save(function (err) {
-                    if (err){
-                        reject(err);
+                    if (err) {
+                        return reject(err);
                     }
 
                     resolve(user);
                 });
+
             });
         });
     },

@@ -1,6 +1,9 @@
 // api/controllers/Auth.js
 var Promise = require('bluebird');
 
+//var config = require('../../config/config');
+
+
 var User = require('../models/UserModel');
 var UserService = require('../services/UserService');
 var UtilService = require('../services/UtilService');

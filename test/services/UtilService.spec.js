@@ -1,7 +1,7 @@
 var expect = require("chai").expect;
 var assert = require("assert");
 
-var UtilService = require('../../../app/api/services/UtilService');
+var UtilService = require('../../app/services/UtilService');
 
 describe("UtilService", function () {
     describe("#hasRequiredAttributes()", function () {

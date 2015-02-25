@@ -5,6 +5,7 @@ var mongoose = require('mongoose'),
     ObjectId = Schema.ObjectID;
 
 var UserSchema = new Schema({
+
     username:    {
         type:     String,
         required: true,
@@ -27,7 +28,11 @@ var UserSchema = new Schema({
     },
     accessToken: {
         type:    String
+    },
+    accessTimestamp: {
+        type:    Date
     }
+
 });
 
 UserSchema.path('email').validate(function (email) {

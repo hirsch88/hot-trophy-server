@@ -2,7 +2,8 @@
 var passport = require('passport');
 var BasicStrategy = require('passport-http').BasicStrategy;
 
-var UserService = require('../../api/services/UserService');
+var config = require('../config/config');
+var UserService = require(config.root + '/api/services/UserService');
 
 
 // Use the BasicStrategy within Passport.
@@ -39,11 +40,7 @@ passport.use(new BasicStrategy({},
                     } else {
                         // SUCCESS
                         return done(null, user);
-                        //{
-                        //    username:    user.username,
-                        //    email:       user.email,
-                        //    accessToken: user.accessToken
-                        //});
+
                     }
                 })
                 .catch(done);

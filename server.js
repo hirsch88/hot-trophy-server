@@ -10,33 +10,38 @@ var express = require('express');        // call express
 var app = express();                 // define our app using express
 var bodyParser = require('body-parser');
 var fs = require('fs');
+var logger = require('morgan');
+var methodOverride = require('method-override');
+var config = require('./config/config');
+var glob = require('glob');
 
 
 // MONGO DB -------------------------------
 var mongoose = require('mongoose');
-var db = mongoose.connect('mongodb://localhost/hot-trophy');
+var db = mongoose.connect(config.db);
 
 
 // PKG -------------------------------
-var pkg = require('./../package.json');
+var pkg = require('./package.json');
 
 
 // PASSPORT JS -------------------------------
 // Initialize Passport!  Note: no need to use session middleware when each
 // request carries authentication credentials, as is the case with HTTP Basic.
-var passport = require('./core/middleware/Passport');
+var passport = require('./middleware/Passport');
 app.use(passport.initialize());
 
 
 // SERVER CONFIG -------------------------------
-var port = process.env.PORT || 2002;        // set our port
+var port = process.env.PORT || config.port;        // set our port
 
 // configure app to use bodyParser()
 // this will let us get the data from a POST
+app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(methodOverride());
 //app.disable('etag');
-
 
 
 // MIDDLEWARE
@@ -46,19 +51,16 @@ var MiddleWareRouter = express.Router();              // get an instance of the 
 
 // STATIC RESPONSES -------------------------------
 var staticResponses = [];
-var pathToStaticResponses = process.cwd() + '/core/responses';
-fs.readdirSync(pathToStaticResponses).forEach(function (file) {
-    if (file.indexOf('.js') !== -1) {
-        staticResponses.push(
-            require(pathToStaticResponses + '/' + file)
-        );
-    }
+glob.sync('api/responses/*.js', {}).forEach(function (file) {
+    staticResponses.push(
+        require('./' + file)
+    );
 });
 MiddleWareRouter.use(staticResponses);
 
 
 // CUSTOM MIDDLEWARE -------------------------------
-MiddleWareRouter.use(require('./core/middleware/ContentTypeValidator'));
+MiddleWareRouter.use(require('./middleware/ContentTypeValidator'));
 app.use('/api', MiddleWareRouter);
 
 
@@ -73,16 +75,12 @@ app.all('/api', function (req, res, next) {
 
 // ERROR HANDLING -------------------------------
 var errorHandlings = [];
-var pathToerrorHandlings = process.cwd() + '/core/errorHandling';
-fs.readdirSync(pathToerrorHandlings).forEach(function (file) {
-    if (file.indexOf('.js') !== -1) {
-        errorHandlings.push(
-            require(pathToerrorHandlings + '/' + file)
-        );
-    }
+glob.sync('api/models/*.js', {}).forEach(function (file) {
+    errorHandlings.push(
+        require('./' + file)
+    );
 });
 app.use(errorHandlings);
-
 
 
 // ROUTES FOR OUR API
@@ -93,7 +91,7 @@ app.use(errorHandlings);
 // curl -v -I -H "Content-Type:application/json" http://127.0.0.1:2002/api/auth/login
 // curl -v -I -H "Content-Type:application/json" --user bob:secret http://127.0.0.1:2002/
 var AuthCtrl = require('./api/controllers/Auth');
-app.get('/api/auth/login',
+app.post('/api/auth/login',
     // Authenticate using HTTP Basic credentials, with session support disabled.
     passport.authenticate('basic', {session: false}),
     AuthCtrl.login
@@ -108,32 +106,35 @@ app.get('/api/auth/login',
 
 
 // REGISTER OUR ROUTES -------------------------------
-// all of our routes will be prefixed with /auth
-//var AuthRoutes = require('./api/routes/AuthRoutes');
-app.use('/api/auth', [
-    require('./api/routes/AuthRoutes')
+app.use('/api', [
+    require('./config/routes')
 ]);
 
-// all of our routes will be prefixed with /public
-//var TeamRoutes = require('./api/routes/TeamRoutes');
-app.use('/api/public', [
-    require('./api/routes/TeamRoutes')
-]);
 
-// all of our routes will be prefixed with /api
-//var TeamRoutes = require('./api/routes/TeamRoutes');
-app.use('/api/secure', [
-    require('./api/routes/TeamRoutes')
-]);
 
+//// all of our routes will be prefixed with /auth
+////var AuthRoutes = require('./api/routes/AuthRoutes');
+//app.use('/api/auth', [
+//    require('./api/routes/auth/AuthRoutes')
+//]);
+//
+//// all of our routes will be prefixed with /public
+////var TeamRoutes = require('./api/routes/TeamRoutes');
+//app.use('/api/public', [
+//    require('./api/routes/secure/TeamRoutes')
+//]);
+//
+//// all of our routes will be prefixed with /api
+////var TeamRoutes = require('./api/routes/TeamRoutes');
+//app.use('/api/secure', [
+//    require('./api/routes/secure/TeamRoutes')
+//]);
 
 
 // START THE SERVER
 // =============================================================================
 app.listen(port);
 console.log('Magic happens on port ' + port);
-
-
 
 
 // PROTECTED ROUTES -------------------------------
