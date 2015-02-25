@@ -9,53 +9,61 @@
 var express = require('express');        // call express
 var app = express();                 // define our app using express
 var bodyParser = require('body-parser');
-//var fs = require('fs');
-//var util = require('util');
+var fs = require('fs');
 
-// MongoDB
+
+// MONGO DB -------------------------------
 var mongoose = require('mongoose');
 var db = mongoose.connect('mongodb://localhost/hot-trophy');
 
-// PKG
+
+// PKG -------------------------------
 var pkg = require('./../package.json');
 
-//// PassportJS
+
+// PASSPORT JS -------------------------------
 // Initialize Passport!  Note: no need to use session middleware when each
 // request carries authentication credentials, as is the case with HTTP Basic.
 var passport = require('./core/middleware/Passport');
 app.use(passport.initialize());
 
+
+// SERVER CONFIG -------------------------------
 var port = process.env.PORT || 2002;        // set our port
 
-
-// ROUTES FOR OUR API
-// =============================================================================
-var MiddleWareRouter = express.Router();              // get an instance of the express Router
-
-
-// STATIC RESPONSES -------------------------------
-MiddleWareRouter.use(require('./core/middleware/responses/NotFound'));
-MiddleWareRouter.use(require('./core/middleware/responses/NotAcceptable'));
-MiddleWareRouter.use(require('./core/middleware/responses/BadRequest'));
-MiddleWareRouter.use(require('./core/middleware/responses/ServerError'));
-
-MiddleWareRouter.use(require('./core/middleware/responses/Ok'));
-MiddleWareRouter.use(require('./core/middleware/responses/Created'));
-MiddleWareRouter.use(require('./core/middleware/responses/NoContent'));
-
-
-// MIDDLEWARE -------------------------------
-MiddleWareRouter.use(require('./core/middleware/ContentTypeValidator'));
-app.use('/api', MiddleWareRouter);
-
-// CONFIGURATIONS -------------------------------
 // configure app to use bodyParser()
 // this will let us get the data from a POST
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 //app.disable('etag');
 
-app.all('/api', function(req, res, next) {
+
+
+// MIDDLEWARE
+// =============================================================================
+var MiddleWareRouter = express.Router();              // get an instance of the express Router
+
+
+// STATIC RESPONSES -------------------------------
+var staticResponses = [];
+var pathToStaticResponses = process.cwd() + '/core/responses';
+fs.readdirSync(pathToStaticResponses).forEach(function (file) {
+    if (file.indexOf('.js') !== -1) {
+        staticResponses.push(
+            require(pathToStaticResponses + '/' + file)
+        );
+    }
+});
+MiddleWareRouter.use(staticResponses);
+
+
+// CUSTOM MIDDLEWARE -------------------------------
+MiddleWareRouter.use(require('./core/middleware/ContentTypeValidator'));
+app.use('/api', MiddleWareRouter);
+
+
+// CONFIGURATIONS -------------------------------
+app.all('/api', function (req, res, next) {
     // set origin policy etc so cross-domain access wont be an issue
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With,  Content-Type, Accept");
@@ -64,40 +72,39 @@ app.all('/api', function(req, res, next) {
 
 
 // ERROR HANDLING -------------------------------
-app.use(function(err, req, res, next){
-    if( err instanceof SyntaxError){
-        res.badRequest({ message: 'Invalid Json'});
-    }else{
-        next(err);
+var errorHandlings = [];
+var pathToerrorHandlings = process.cwd() + '/core/errorHandling';
+fs.readdirSync(pathToerrorHandlings).forEach(function (file) {
+    if (file.indexOf('.js') !== -1) {
+        errorHandlings.push(
+            require(pathToerrorHandlings + '/' + file)
+        );
     }
 });
+app.use(errorHandlings);
 
 
-// PROTECTED ROUTES -------------------------------
-app.all('/api/public/*', function (req, res, next) {
-    console.log('--- PUBLIC ---');
-    next();// pass control to the next handler
-});
 
-app.all('/api/auth/*', function (req, res, next) {
-    console.log('___ AUTH ___');
-    next();// pass control to the next handler
-});
+// ROUTES FOR OUR API
+// =============================================================================
 
+
+// LOGIN ROUTES -------------------------------
 // curl -v -I -H "Content-Type:application/json" http://127.0.0.1:2002/api/auth/login
 // curl -v -I -H "Content-Type:application/json" --user bob:secret http://127.0.0.1:2002/
 var AuthCtrl = require('./api/controllers/Auth');
 app.get('/api/auth/login',
     // Authenticate using HTTP Basic credentials, with session support disabled.
-    passport.authenticate('basic', { session: false }),
+    passport.authenticate('basic', {session: false}),
     AuthCtrl.login
 );
 
 
-app.all('/api/secure/*', function (req, res, next) {
-    console.log('*** SECURE ****');
-    next();// pass control to the next handler
-});
+// SECURE ROUTES WITH ACCESS TOKEN -------------------------------
+//app.all('/api/secure/*', function (req, res, next) {
+//    console.log('*** SECURE ****');
+//    next();// pass control to the next handler
+//});
 
 
 // REGISTER OUR ROUTES -------------------------------
@@ -120,29 +127,25 @@ app.use('/api/secure', [
 ]);
 
 
+
 // START THE SERVER
 // =============================================================================
 app.listen(port);
 console.log('Magic happens on port ' + port);
 
 
-// curl -i -X POST -d '{ "sign": "VCF", "name": "Valencia CF" } ' http://localhost:2004/api/team
-// CONTROLLERS FOR OUR API
-// =============================================================================
-//var Controller = {};
-//var pathToControllers = process.cwd() + '/api/controllers';
-//fs.readdirSync(pathToControllers).forEach(function (file) {
-//    if (file.indexOf('.js') !== -1) {
-//        Controller[file.split('.')[0]] = require(pathToControllers + '/' + file);
-//    }
+
+
+// PROTECTED ROUTES -------------------------------
+//app.all('/api/public/*', function (req, res, next) {
+//    console.log('--- PUBLIC ---');
+//    next();// pass control to the next handler
 //});
-// Team on routes that end in /teams and /team/:team_id
-// ----------------------------------------------------
-//router.route('/team')
-//    .get(Controller.Team.read)
-//    .post(Controller.Team.create);
-//
-//router.route('/team/:team_id')
-//    .get(Controller.Team.readById)
-//    .put(Controller.Team.update)
-//    .delete(Controller.Team.destroy);
+//app.all('/api/auth/*', function (req, res, next) {
+//    console.log('___ AUTH ___');
+//    next();// pass control to the next handler
+//});
+//app.all('/api/secure/*', function (req, res, next) {
+//    console.log('*** SECURE ****');
+//    next();// pass control to the next handler
+//});
