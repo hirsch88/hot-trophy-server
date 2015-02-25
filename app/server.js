@@ -25,13 +25,6 @@ var pkg = require('./../package.json');
 var passport = require('./core/middleware/Passport');
 app.use(passport.initialize());
 
-// configure app to use bodyParser()
-// this will let us get the data from a POST
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(bodyParser.json());
-app.set('json spaces', 4);
-app.disable('etag');
-
 var port = process.env.PORT || 2002;        // set our port
 
 
@@ -54,6 +47,30 @@ MiddleWareRouter.use(require('./core/middleware/responses/NoContent'));
 // MIDDLEWARE -------------------------------
 MiddleWareRouter.use(require('./core/middleware/ContentTypeValidator'));
 app.use('/api', MiddleWareRouter);
+
+// CONFIGURATIONS -------------------------------
+// configure app to use bodyParser()
+// this will let us get the data from a POST
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
+//app.disable('etag');
+
+app.all('/api', function(req, res, next) {
+    // set origin policy etc so cross-domain access wont be an issue
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With,  Content-Type, Accept");
+    next();
+});
+
+
+// ERROR HANDLING -------------------------------
+app.use(function(err, req, res, next){
+    if( err instanceof SyntaxError){
+        res.badRequest({ message: 'Invalid Json'});
+    }else{
+        next(err);
+    }
+});
 
 
 // PROTECTED ROUTES -------------------------------

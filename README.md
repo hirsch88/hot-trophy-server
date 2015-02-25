@@ -1,2 +1,2 @@
-# hot-trophy-node
-Backend
+# hot-trophy-server
+Node Express Backend
