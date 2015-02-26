@@ -12,21 +12,26 @@ glob.sync(pathToApiCtrl + '*.js', {}).forEach(function (file) {
 
 // ROUTES
 // =============================================================================
+router.use(function timeLog(req, res, next) {
+    console.log('Time: ', Date.now());
+    next();
+});
+
 
 // AUTH -------------------------------
-router.route('auth/register')
+router.route('/auth/register')
     .post(Controller.Auth.register);
 
-router.route('auth/logout')
+router.route('/auth/logout')
     .post(Controller.Auth.logout);
 
 
 // TEAM -------------------------------
-router.route('secure/team')
+router.route('/secure/team')
     .get(Controller.Team.read)
     .post(Controller.Team.create);
 
-router.route('secure/team/:team_id')
+router.route('/secure/team/:team_id')
     .get(Controller.Team.readById)
     .put(Controller.Team.update)
     .delete(Controller.Team.destroy);

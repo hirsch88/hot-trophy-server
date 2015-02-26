@@ -14,11 +14,13 @@
 var express = require('express');        // call express
 var app = express();                 // define our app using express
 var bodyParser = require('body-parser');
-var fs = require('fs');
-var logger = require('morgan');
-var methodOverride = require('method-override');
-var config = require('./config/config');
+//var fs = require('fs');
+//var logger = require('morgan');
+//var methodOverride = require('method-override');
 var glob = require('glob');
+
+// CONFIG -------------------------------
+var config = require('./config/config');
 
 
 // MONGO DB -------------------------------
@@ -80,7 +82,7 @@ app.all('/api', function (req, res, next) {
 
 // ERROR HANDLING -------------------------------
 var errorHandlings = [];
-glob.sync('api/models/*.js', {}).forEach(function (file) {
+glob.sync('./middleware/errorHandling/*.js', {}).forEach(function (file) {
     errorHandlings.push(
         require('./' + file)
     );
@@ -117,6 +119,18 @@ var routes = require('./config/routes');
 app.use('/api', routes);
 
 
+
+// START THE SERVER
+// =============================================================================
+app.listen(port);
+console.log('Magic happens on port ' + port);
+
+
+
+
+
+// OLD STUFF =============================================================================
+// PROTECTED ROUTES -------------------------------
 //// all of our routes will be prefixed with /auth
 ////var AuthRoutes = require('./api/routes/AuthRoutes');
 //app.use('/api/auth', [
@@ -134,15 +148,6 @@ app.use('/api', routes);
 //app.use('/api/secure', [
 //    require('./api/routes/secure/TeamRoutes')
 //]);
-
-
-// START THE SERVER
-// =============================================================================
-app.listen(port);
-console.log('Magic happens on port ' + port);
-
-
-// PROTECTED ROUTES -------------------------------
 //app.all('/api/public/*', function (req, res, next) {
 //    console.log('--- PUBLIC ---');
 //    next();// pass control to the next handler
