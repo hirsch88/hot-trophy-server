@@ -1,6 +1,7 @@
 // PassportJS
 var passport = require('passport');
 var BasicStrategy = require('passport-http').BasicStrategy;
+var BearerStrategy = require('passport-http-bearer').Strategy;
 
 var config = require('../config/config');
 var UserService = require(config.root + '/api/services/UserService');
@@ -46,6 +47,26 @@ passport.use(new BasicStrategy({},
                 .catch(done);
 
         });
+    }
+));
+
+// HTTP Bearer authentication strategy for Passport.
+//   This module lets you authenticate HTTP requests using bearer tokens, as specified by RFC 6750, in your Node.js
+//   applications. Bearer tokens are typically used protect API endpoints, and are often issued using OAuth 2.0.
+//
+//   By plugging into Passport, bearer token support can be easily and unobtrusively integrated into any application
+//   or framework that supports Connect-style middleware, including Express.
+passport.use(new BearerStrategy(
+    function (token, done) {
+
+        UserService.findByAccessToken(token)
+            .then(function (user) {
+                if (!user) {
+                    return done(null, false);
+                }
+                return done(null, user, {scope: 'all'});
+            })
+            .catch(done);
     }
 ));
 

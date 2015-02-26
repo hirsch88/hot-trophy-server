@@ -3,6 +3,11 @@
 // http://www.odindesign-themes.com/theBebop/comic/
 // http://themeforest.net/item/fc-football-club-template-soccer-psd/9326478?WT.oss_phrase=soccer&WT.oss_rank=6&WT.z_author=uouapps&WT.ac=search_thumb
 
+// http://bootstrapzero.com/
+// http://github.hubspot.com/offline/docs/welcome/
+// http://clrs.cc/
+// http://tympanus.net/Development/IconHoverEffects/#set-9
+
 // BASE SETUP
 // =============================================================================
 // call the packages we need
@@ -37,10 +42,10 @@ var port = process.env.PORT || config.port;        // set our port
 
 // configure app to use bodyParser()
 // this will let us get the data from a POST
-app.use(logger('dev'));
+//app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(methodOverride());
+//app.use(methodOverride());
 //app.disable('etag');
 
 
@@ -99,17 +104,17 @@ app.post('/api/auth/login',
 
 
 // SECURE ROUTES WITH ACCESS TOKEN -------------------------------
-//app.all('/api/secure/*', function (req, res, next) {
-//    console.log('*** SECURE ****');
-//    next();// pass control to the next handler
-//});
-
+app.all('/api/secure/*',
+    passport.authenticate('bearer', {session: false}),
+    function (req, res, next) {
+        console.log('*** SECURE ****');
+        next();// pass control to the next handler
+    }
+);
 
 // REGISTER OUR ROUTES -------------------------------
-app.use('/api', [
-    require('./config/routes')
-]);
-
+var routes = require('./config/routes');
+app.use('/api', routes);
 
 
 //// all of our routes will be prefixed with /auth
