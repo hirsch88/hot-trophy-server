@@ -1,6 +1,9 @@
 var request = require('supertest');
 var express = require('express');
 
+// http://visionmedia.github.io/superagent/
+// https://www.npmjs.com/package/superagent
+
 var server = require('../../../server');
 
 describe('Process: Register -> Login', function () {
