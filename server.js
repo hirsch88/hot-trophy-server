@@ -18,6 +18,7 @@ var bodyParser = require('body-parser');
 //var logger = require('morgan');
 //var methodOverride = require('method-override');
 var glob = require('glob');
+var logger = require('./lib/logger');
 
 // CONFIG -------------------------------
 var config = require('./config/config');
@@ -25,7 +26,23 @@ var config = require('./config/config');
 
 // MONGO DB -------------------------------
 var mongoose = require('mongoose');
-var db = mongoose.connect(config.db);
+mongoose.connect(config.db);
+
+// CONNECTION EVENTS
+// When successfully connected
+mongoose.connection.on('connected', function () {
+    logger.success('Mongoose', 'Connection open to ' + config.db);
+});
+
+// If the connection throws an error
+mongoose.connection.on('error',function (err) {
+    logger.error('Mongoose', 'Default connection error: ' + err);
+});
+
+// When the connection is disconnected
+mongoose.connection.on('disconnected', function () {
+    logger.error('Mongoose', 'Default connection disconnected');
+});
 
 
 // PKG -------------------------------
@@ -123,7 +140,9 @@ app.use('/api', routes);
 // START THE SERVER
 // =============================================================================
 app.listen(port);
-console.log('Magic happens on port ' + port);
+logger.divide();
+logger.success('Express', 'Is up and running @ port ' + port);
+
 
 
 

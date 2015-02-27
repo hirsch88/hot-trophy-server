@@ -27,6 +27,9 @@ router.route('/auth/logout')
 
 
 // TEAM -------------------------------
+router.route('/public/team')
+    .get(Controller.Team.read);
+
 router.route('/secure/team')
     .get(Controller.Team.read)
     .post(Controller.Team.create);
