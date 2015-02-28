@@ -48,22 +48,25 @@ describe('Process: Register -> Login', function () {
         });
     });
 
-    //describe('POST auth/login', function () {
-    //    it('should return 200 Created and a access token', function (done) {
-    //
-    //        request(server)
-    //            .post('/api/auth/login')
-    //            .type('json')
-    //            .send(testUser)
-    //            .expect(201)
-    //            .end(function (err) {
-    //                should.not.exist(err);
-    //                done();
-    //            });
-    //
-    //
-    //    });
-    //});
+    describe('POST auth/login', function () {
+        it('should return 200 Created and a access token', function (done) {
+
+            request(server)
+                .post('/api/auth/login')
+                .set('Authorization', basicAuth)
+                .set('Content-Type', 'application/json')
+                .expect(200)
+                .end(function (err) {
+                    if(err){
+                        log.error(res.text);
+                    }
+                    should.not.exist(err);
+                    done();
+                });
+
+
+        });
+    });
 
 });
 

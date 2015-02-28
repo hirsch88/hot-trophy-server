@@ -96,33 +96,31 @@ module.exports = {
                 return reject(null);
             }
 
-            generateToken(function (err, newAccessToken) {
-                if (err) {
-                    return reject(err);
-                }
+            generateToken()
+                .then(function (newAccessToken) {
+                    User.findById(user.id, function (err, user) {
 
-                User.findById(user.id, function (err, user) {
-
-                    if (err) {
-                        return reject(err);
-                    }
-
-                    if (!user) {
-                        return reject(null);
-                    }
-
-                    user.accessToken = newAccessToken;
-                    user.accessTimestamp = new Date();
-                    user.save(function (err) {
                         if (err) {
                             return reject(err);
                         }
 
-                        resolve(user);
-                    });
+                        if (!user) {
+                            return reject(null);
+                        }
 
-                });
-            });
+                        user.accessToken = newAccessToken;
+                        user.accessTimestamp = new Date();
+                        user.save(function (err) {
+                            if (err) {
+                                return reject(err);
+                            }
+
+                            resolve(user);
+                        });
+                    });
+                })
+                .catch(reject);
+            
         });
     },
 
