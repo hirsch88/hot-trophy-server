@@ -15,12 +15,13 @@ var express = require('express');        // call express
 var app = express();                 // define our app using express
 var bodyParser = require('body-parser');
 //var fs = require('fs');
-//var logger = require('morgan');
+var logger = require('morgan');
 //var methodOverride = require('method-override');
 var glob = require('glob');
-var logger = require('./lib/logger');
+var log = require('./lib/logger');
 
 // CONFIG -------------------------------
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 var config = require('./config/config');
 
 
@@ -31,17 +32,17 @@ mongoose.connect(config.db);
 // CONNECTION EVENTS
 // When successfully connected
 mongoose.connection.on('connected', function () {
-    logger.success('Mongoose', 'Connection open to ' + config.db);
+    log.success('Mongoose', 'Connection open to ' + config.db);
 });
 
 // If the connection throws an error
 mongoose.connection.on('error',function (err) {
-    logger.error('Mongoose', 'Default connection error: ' + err);
+    log.error('Mongoose', 'Default connection error: ' + err);
 });
 
 // When the connection is disconnected
 mongoose.connection.on('disconnected', function () {
-    logger.error('Mongoose', 'Default connection disconnected');
+    log.error('Mongoose', 'Default connection disconnected');
 });
 
 
@@ -59,11 +60,16 @@ app.use(passport.initialize());
 // SERVER CONFIG -------------------------------
 var port = process.env.PORT || config.port;        // set our port
 
+app.use(logger('dev'));
+
 // configure app to use bodyParser()
 // this will let us get the data from a POST
-//app.use(logger('dev'));
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }));
+
+// parse application/json
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+
 //app.use(methodOverride());
 //app.disable('etag');
 
@@ -80,7 +86,7 @@ glob.sync('api/responses/*.js', {}).forEach(function (file) {
         require('./' + file)
     );
 });
-MiddleWareRouter.use(staticResponses);
+app.use(staticResponses);
 
 
 // CUSTOM MIDDLEWARE -------------------------------
@@ -140,9 +146,10 @@ app.use('/api', routes);
 // START THE SERVER
 // =============================================================================
 app.listen(port);
-logger.divide();
-logger.success('Express', 'Is up and running @ port ' + port);
-
+log.divide();
+log.success('Express', 'Is up and running @ port ' + port);
+log.info('Environment', process.env.NODE_ENV);
+module.exports = app;
 
 
 

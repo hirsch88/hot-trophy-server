@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var glob = require('glob');
+var logger = require('../lib/logger');
 
 // GRAB ALL API CONTROLLERS
 // =============================================================================
@@ -13,7 +14,7 @@ glob.sync(pathToApiCtrl + '*.js', {}).forEach(function (file) {
 // ROUTES
 // =============================================================================
 router.use(function timeLog(req, res, next) {
-    console.log('Time: ', Date.now());
+    //logger.info('Routes', 'Time: ' + Date.now());
     next();
 });
 

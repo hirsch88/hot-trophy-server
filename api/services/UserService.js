@@ -2,6 +2,7 @@ var Promise = require('bluebird');
 var User = require('../models/UserModel');
 var crypto = require('crypto');
 var bcrypt = require('bcrypt');
+var log = require('../../lib/logger');
 
 module.exports = {
 
@@ -91,36 +92,39 @@ module.exports = {
 
     buildAccessTokenForUser: function (user) {
         return new Promise(function (resolve, reject) {
-            console.log(user);
             if (!user) {
                 return reject(null);
             }
 
-            var newAccessToken = generateToken();
-            User.findById(user.id, function (err, user) {
-
+            generateToken(function (err, newAccessToken) {
                 if (err) {
                     return reject(err);
                 }
 
-                if (!user) {
-                    return reject(null);
-                }
+                User.findById(user.id, function (err, user) {
 
-                user.accessToken = newAccessToken;
-                user.accessTimestamp = new Date();
-                user.save(function (err) {
                     if (err) {
                         return reject(err);
                     }
 
-                    resolve(user);
-                });
+                    if (!user) {
+                        return reject(null);
+                    }
 
+                    user.accessToken = newAccessToken;
+                    user.accessTimestamp = new Date();
+                    user.save(function (err) {
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        resolve(user);
+                    });
+
+                });
             });
         });
     },
-
 
     cipherPassword: function (password) {
         var scope = this;
@@ -163,10 +167,19 @@ module.exports = {
  * @param data {String} email:password
  * @returns {*}
  */
-function generateToken(data) {
-    data = data || 'TheBubu:Secret';
-    var random = Math.floor(Math.random() * 100001);
-    var timestamp = (new Date()).getTime();
-    var sha256 = crypto.createHmac("sha256", random + "WOO" + timestamp);
-    return sha256.update(data).digest("base64");
+function generateToken() {
+    return new Promise(function (resolve, reject) {
+        crypto.randomBytes(20, function (err, token) {
+            if (err) reject(err);
+
+            if (token) {
+                resolve(token.toString('hex'));
+            }
+            else {
+                reject(new Error('Problem when generating token'));
+            }
+        });
+    });
 }
+
+

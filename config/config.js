@@ -6,7 +6,7 @@ var config = {
     development: {
         root: rootPath,
         app: {
-            name: 'express'
+            name: 'hot-trophy'
         },
         port: 2002,
         db: 'mongodb://localhost/hot-trophy'
@@ -15,7 +15,7 @@ var config = {
     test: {
         root: rootPath,
         app: {
-            name: 'express'
+            name: 'hot-trophy'
         },
         port: 2002,
         db: 'mongodb://localhost/hot-trophy-test'
@@ -24,7 +24,7 @@ var config = {
     production: {
         root: rootPath,
         app: {
-            name: 'express'
+            name: 'hot-trophy'
         },
         port: 2002,
         db: 'mongodb://localhost/hot-trophy-production'

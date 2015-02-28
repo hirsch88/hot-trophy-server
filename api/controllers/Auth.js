@@ -5,6 +5,7 @@ var Promise = require('bluebird');
 
 
 var User = require('../models/UserModel');
+var log = require('../../lib/logger');
 var UserService = require('../services/UserService');
 var UtilService = require('../services/UtilService');
 
@@ -20,23 +21,23 @@ var AuthController = {
             })
         }
 
+        var user = {};
         UserService.isUnique(req.body.username, req.body.email)
             .then(function () {
-                return new Promise(function (resolve, reject) {
-                    resolve(req.body.password);
-                });
+                user.username = req.body.username;
+                user.email = req.body.email;
+                return req.body.password;
             })
             .then(UserService.cipherPassword)
             .then(function (hashedPassword) {
+                user.password = hashedPassword;
+            })
+            .then(UserService.generateToken)
+            .then(function(emailToken){
                 return new Promise(function (resolve, reject) {
-                    var user = new User({
-                        username:   req.body.username,
-                        email:      req.body.email,
-                        password:   hashedPassword,
-                        emailToken: UserService.generateToken(req.body.email + ':' + req.body.password)
-                    });
-
-                    user.save(function (err, result) {
+                    user.emailToken = emailToken;
+                    user = new User(user);
+                    user.save( function (err, result) {
                         if (err) {
                             reject(err);
                         } else {
@@ -54,7 +55,6 @@ var AuthController = {
             .catch(function (err) {
                 res.badRequest(err);
             });
-
 
     },
 
