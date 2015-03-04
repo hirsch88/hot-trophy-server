@@ -27,6 +27,11 @@ router.route('/auth/logout')
     .post(Controller.Auth.logout);
 
 
+// SCHEDULER -------------------------------
+router.route('/public/schedule')
+    .post(Controller.Schedule.generate);
+
+
 // TEAM -------------------------------
 router.route('/public/team')
     .get(Controller.Team.read);

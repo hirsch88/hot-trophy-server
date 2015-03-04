@@ -16,7 +16,7 @@ var mongoose = require('mongoose');
 describe('INIT', function () {
 
     before(function (done) {
-        mongoose.connection.collections['users'].drop( function() {
+        mongoose.connection.collections['users'].drop(function () {
             done();
         });
     });

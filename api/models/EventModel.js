@@ -7,6 +7,8 @@ var mongoose = require('mongoose'),
 
 var TeamSchema = require('./TeamSchema');
 
+var EventService = require('../services/EventService');
+
 var EventSchema = new Schema({
     name: {
         type: String,
@@ -24,30 +26,32 @@ var EventSchema = new Schema({
         min:      3
     },
 
-    amountFields: {
+    amountPitches: {
         type:     Number,
         default:  1,
         min:      1
     },
 
-    type: {
+    kind: {
         type:     String,
-        enum:     [
-            'Soccer',
-            'FIFA'
-        ],
-        default: 'FIFA',
+        enum: EventService.getKinds(),
+        //enum:     [
+        //    'soccer',
+        //    'fifa'
+        //],
+        //default: 'fifa',
         required: true
     },
 
-    tournamentType: {
+    mode: {
         type:     String,
-        enum:     [
-            'Liga',
-            'KO',
-            'Groups/KO'
-        ],
-        default: 'Liga',
+        enum:     EventService.getModes(),
+        //enum:     [
+        //    'liga',
+        //    'kO',
+        //    'groups/kO'
+        //],
+        //default: 'liga',
         required: true
     },
 

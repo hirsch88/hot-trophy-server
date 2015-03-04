@@ -20,6 +20,14 @@ module.exports = {
         }
         return true;
 
+    },
+
+    buildHashKey: function (num) {
+        return '#' + num.toString(16);
+    },
+
+    reverseHashKey: function (hashKey) {
+        return parseInt(hashKey.substr(1), 16);
     }
 
 
