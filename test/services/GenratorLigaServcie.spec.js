@@ -240,8 +240,17 @@ describe("Unit: GenratorLigaServcie", function () {
                 for (var i = 0; i < events.length; i++) {
                     expect(events[i].value().teams)
                         .to.have.length(i + 3);
+
+                    console.log('********************************************************************************');
+
+                    console.log(events[i].value().schedule);
+
+                    console.log('********************************************************************************');
+
+
+                    var amount = (events[i].value().hasReturnLeg) ? amountGames[i] * 2 : amountGames[i];
                     expect(events[i].value().schedule)
-                        .to.have.length(amountGames[i]);
+                        .to.have.length(amount);
                 }
 
             });
@@ -250,10 +259,10 @@ describe("Unit: GenratorLigaServcie", function () {
                 for (var i = 0; i < events.length; i++) {
                     _.each(events[i].value().teams, function (team) {
                         var result = _.countBy(events[i].value().schedule, function (game) {
-                            return (game.home === team.hashKey) || (game.away === team.hashKey);
+                            return (game.home.team === team.hashKey) || (game.away.team === team.hashKey);
                         }).true;
 
-                        if(result !== (events[i].value().teams.length - 1)){
+                        if (result !== (events[i].value().teams.length - 1)) {
                             log.warn('event', i);
                             log.warn('team', team.hashKey);
                         }
@@ -269,14 +278,17 @@ describe("Unit: GenratorLigaServcie", function () {
                 for (var i = 0; i < events.length; i++) {
                     _.each(events[i].value().teams, function (team) {
                         var result = _.countBy(events[i].value().schedule, function (game) {
-                            return (game.home === team.hashKey) ? 'home' : (game.away === team.hashKey) ? 'away' : 'none';
+                            return (game.home.team === team.hashKey) ? 'home' : (game.away.team === team.hashKey) ? 'away' : 'none';
                         });
 
+                        result.home = result.home || 0;
+                        result.away = result.away || 0;
+
                         var diff = result.home - result.away;
-                        if(events[i].value().teams.length % 2 === 0 ){
+                        if (events[i].value().teams.length % 2 === 0) {
                             var bol = ( -2 < diff || diff < 2 );
 
-                            if(!bol){
+                            if (!bol) {
                                 log.warn('event', i);
                                 log.warn('team', team.hashKey);
                             }
@@ -284,8 +296,8 @@ describe("Unit: GenratorLigaServcie", function () {
                             expect(bol)
                                 .to.be.true;
 
-                        }else{
-                            if(diff !== 0){
+                        } else {
+                            if (diff !== 0) {
                                 log.warn('event', i);
                                 log.warn('team', team.hashKey);
                             }

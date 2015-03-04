@@ -63,6 +63,7 @@ function Generator(options) {
  */
 Generator.prototype.run = function () {
     var scope = this;
+    var counter = 0;
     return new Promise(function (resolve, reject) {
 
         // local variables and defaults
@@ -74,8 +75,15 @@ Generator.prototype.run = function () {
             isHomeToggle = scope.evaluateHomeTeam(primaryTeam, opponentTeam);
 
             var game = {
-                home: (isHomeToggle) ? primaryTeam.hashKey : opponentTeam.hashKey,
-                away: (!isHomeToggle) ? primaryTeam.hashKey : opponentTeam.hashKey
+                id : ++counter,
+                home: {
+                    team:  (isHomeToggle) ? primaryTeam.hashKey : opponentTeam.hashKey,
+                    score: null
+                },
+                away: {
+                    team:  (!isHomeToggle) ? primaryTeam.hashKey : opponentTeam.hashKey,
+                    score: null
+                }
             };
 
             scope.schedule.push(game);
@@ -122,8 +130,8 @@ Generator.prototype.eachClash = function (iteratee) {
 Generator.prototype.doesClashOfThisTeamsAlreadyExists = function (primaryTeam, opponentTeam) {
     var scope = this;
     return _.find(scope.schedule, function (game) {
-            return (game.home === primaryTeam.hashKey && game.away === opponentTeam.hashKey)
-                || (game.home === opponentTeam.hashKey && game.away === primaryTeam.hashKey);
+            return (game.home.team === primaryTeam.hashKey && game.away.team === opponentTeam.hashKey)
+                || (game.home.team === opponentTeam.hashKey && game.away.team === primaryTeam.hashKey);
         }) !== undefined;
 };
 
@@ -140,42 +148,58 @@ Generator.prototype.doesClashOfThisTeamsAlreadyExists = function (primaryTeam, o
 Generator.prototype.evaluateHomeTeam = function (primaryTeam, opponentTeam) {
     var scope = this;
 
-    var resultAmountHomeGames = _.countBy(scope.schedule, function (game) {
-        if (game.home === primaryTeam.hashKey) {
-            return 'primary';
+    var resultAmountGames = _.countBy(scope.schedule, function (game) {
+        if (game.home.team === primaryTeam.hashKey) {
+            return 'primaryHome';
+        }
+        if (game.away.team === primaryTeam.hashKey) {
+            return 'primaryAway';
         }
 
-        if (game.home === opponentTeam.hashKey) {
-            return 'opponent';
+        if (game.home.team === opponentTeam.hashKey) {
+            return 'opponentHome';
+        }
+        if (game.away.team === opponentTeam.hashKey) {
+            return 'opponentAway';
         }
 
         return 'none';
     });
 
-    resultAmountHomeGames.primary = resultAmountHomeGames.primary || 0;
-    resultAmountHomeGames.opponent = resultAmountHomeGames.opponent || 0;
+    resultAmountGames.primaryHome = resultAmountGames.primaryHome || 0;
+    resultAmountGames.primaryAway = resultAmountGames.primaryAway || 0;
+    resultAmountGames.opponentHome = resultAmountGames.opponentHome || 0;
+    resultAmountGames.opponentAway = resultAmountGames.opponentAway || 0;
 
 
     var resultAmountGamesPrimaryTeam = _.countBy(scope.schedule, function (game) {
-        return (game.home === primaryTeam.hashKey) || (game.away === primaryTeam.hashKey);
+        return (game.home.team === primaryTeam.hashKey) || (game.away.team === primaryTeam.hashKey);
     }).true;
 
     var resultAmountGamesOponentTeam = _.countBy(scope.schedule, function (game) {
-        return (game.home === opponentTeam.hashKey) || (game.away === opponentTeam.hashKey);
+        return (game.home.team === opponentTeam.hashKey) || (game.away.team === opponentTeam.hashKey);
     }).true;
 
     var amountGamesPerTeam = (scope.hasReturnLeg)
         ? (scope.teams.length - 1) * 2
         : (scope.teams.length - 1);
 
-    //console.log('-----------------');
-    //console.log(scope.hasReturnLeg);
-    //console.log(amountGamesPerTeam);
-    //console.log(resultAmountGamesPrimaryTeam);
-    //console.log(resultAmountGamesOponentTeam);
+
+    var even = (scope.teams.length) % 2 !== 0;
+    var maxHomeCounter = (even) ? ((scope.teams.length - 1) / 2) : ((scope.teams.length) / 2);
+    var maxAwayCounter = (even) ? maxHomeCounter : ((scope.teams.length) / 2);
 
 
-    return resultAmountHomeGames.primary <= resultAmountHomeGames.opponent;
+    if (maxHomeCounter === resultAmountGames.primaryHome) {
+        return false;
+    }
+
+    if (maxAwayCounter === resultAmountGames.primaryAway) {
+        return true;
+    }
+
+
+    return resultAmountGames.primaryHome < resultAmountGames.opponentHome;
 
 };
 

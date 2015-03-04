@@ -30,5 +30,4 @@ module.exports = {
         return parseInt(hashKey.substr(1), 16);
     }
 
-
 };

@@ -58,11 +58,25 @@ describe('Unit: Scheduler Liga', function () {
                     .post('/api/public/schedule')
                     .type('json')
                     .send({
-                        name: 'test-tunier',
-                        date: new Date('01.04.2015'),
-                        kind: 'FIFA',
-                        mode: 'LIGA',
-                        teams: teams
+                        name:      'test-tunier',
+                        date:      new Date('01.04.2015'),
+                        kind:      'FIFA',
+                        mode:      'LIGA',
+                        returnLeg:  false,
+                        teams:     [
+                            {
+                                name: 'Hirsch'
+                            },
+                            {
+                                name: 'Moe'
+                            },
+                            {
+                                name: 'Beni'
+                            },
+                            {
+                                name: 'Dave'
+                            }
+                        ]
                     })
                     .expect(200)
                     .end(function (err, res) {
