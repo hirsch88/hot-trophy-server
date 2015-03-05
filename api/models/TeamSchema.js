@@ -17,12 +17,22 @@ var TeamSchema = new Schema({
         required: true,
         trim:     true
     },
+    logoClass: {
+        type: String,
+        trim: true
+    },
+
+    // FIFA
+    club:     {
+        type:     String,
+        trim:     true
+    },
     logoLink: {
         type: String,
         trim: true
     },
 
-    players:  [PlayerSchema],
+    players:  [PlayerSchema]
 
 
 });

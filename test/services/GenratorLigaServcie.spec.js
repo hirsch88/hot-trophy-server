@@ -207,7 +207,7 @@ describe("Unit: GenratorLigaServcie", function () {
             before(function (done) {
                 var promises = [];
 
-                for (var i = 2; i < 20; i++) {
+                for (var i = 5; i < 6; i++) {
 
                     var teams = [];
                     for (var n = 0; n <= i; n++) {
@@ -241,17 +241,25 @@ describe("Unit: GenratorLigaServcie", function () {
                     expect(events[i].value().teams)
                         .to.have.length(i + 3);
 
-                    console.log('********************************************************************************');
-
-                    console.log(events[i].value().schedule);
-
-                    console.log('********************************************************************************');
-
-
                     var amount = (events[i].value().hasReturnLeg) ? amountGames[i] * 2 : amountGames[i];
                     expect(events[i].value().schedule)
                         .to.have.length(amount);
                 }
+
+            });
+
+            it(' events should the maximum of pitches', function () {
+                //var amountGames = [3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120, 136, 153, 171, 190];
+
+                _.each(events, function (event) {
+                    var maxAmountOfPitches = (event.value().teams.length % 2 == 0)
+                        ? (event.value().teams.length/2)
+                        : ((event.value().teams.length-1)/2);
+
+                    expect(event.value().amountPitches)
+                        .to.equal(maxAmountOfPitches);
+
+                });
 
             });
 
