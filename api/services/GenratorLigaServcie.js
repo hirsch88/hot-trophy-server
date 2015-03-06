@@ -32,6 +32,12 @@ function hasRequiredAttributes(options) {
                 }
             });
 
+            if(options.teams.length < 3){
+                return reject({
+                    message: 'This action needs more teams'
+                });
+            }
+
             resolve(options);
         }
     });
