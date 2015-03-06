@@ -59,7 +59,6 @@ function Generator(options) {
         this.teams[i].hashKey = UtilService.buildHashKey(i + 1);
     }
 
-    return this;
 }
 
 /**
@@ -73,15 +72,119 @@ Generator.prototype.run = function () {
     var scope = this;
     return new Promise(function (resolve) {
 
+        // if the amount of teams is not even then we will add a dummy team to generate a schedule
+        if (scope.teams.length % 2 !== 0 && scope.teams.length > 4) {
+            //log.warn('AddDummy');
+            scope.addDummyTeam();
+            scope.amountPitches++;
+        }
+
         // build first draw of the schedule
         scope.generateClashes();
 
         // sorts the schedule and adds id's ,rounds and pitches
-        scope.sort();
+        scope.sortSchedule();
+
+        // if there is a dummy team remove all clashes and also from the team collection
+        if (scope.hasDummyTeam()) {
+            //log.warn('HasDummy');
+            scope.disappearDummyTeam()
+        }
+
+        // For test
+        scope.checkRoundsForDuplicates();
 
         // end
         resolve(scope);
 
+    });
+};
+
+/**
+ * @name checkRoundsForDuplicates
+ */
+Generator.prototype.checkRoundsForDuplicates = function () {
+    var scope = this;
+    for (var round = 1; round <= scope.getAmountRounds(); round++) {
+
+        var list = _.filter(scope.schedule, function (game) {
+            return game.round == round;
+        });
+
+        var result = {};
+        _.each(list, function (game) {
+            result[game.home.team] = 0;
+            result[game.away.team] = 0;
+        });
+
+        var hasDuplicity = false;
+        _.each(list, function (game) {
+            result[game.home.team]++;
+            result[game.away.team]++;
+
+            if (result[game.home.team] > 1 || result[game.away.team] > 1) {
+                hasDuplicity = true;
+            }
+        });
+
+        if (hasDuplicity) {
+            log.warn('hasDuplicity', round, result);
+        }
+    }
+};
+
+/**
+ * @name getAmountRounds
+ * @returns {number}
+ */
+Generator.prototype.getAmountRounds = function () {
+
+    return this.schedule[this.schedule.length - 1].round;
+
+    //log.info('getAmountRounds', this.schedule.length);
+    //log.info('getAmountRounds', this.amountPitches);
+    //return this.schedule.length / this.amountPitches;
+};
+
+
+/**
+ * @name hasDummyTeam
+ * @returns {boolean}
+ */
+Generator.prototype.hasDummyTeam = function () {
+    var scope = this;
+    return _.findWhere(scope.teams, {hashKey: '??'}) !== undefined;
+};
+
+/**
+ * @name disappearDummyTeam
+ * @description
+ * This removes all clashes of the dummy team to get a correct schedule for the not even amount of teams
+ */
+Generator.prototype.disappearDummyTeam = function () {
+    var scope = this;
+
+    // remove all clashes
+    scope.schedule = _.filter(scope.schedule, function (clash) {
+        return (clash.home.team !== '??') && (clash.away.team !== '??');
+    });
+
+    // remove from team collection
+    scope.teams = _.filter(scope.teams, function (team) {
+        return team.hashKey !== '??';
+    });
+};
+
+/**
+ * @name addDummyTeam
+ * @description
+ * This method adds a dummyteam to the not even amount of teams to get a even amount. This helps
+ * us to generate the schedule, but at the end we will remove the clashes of this team
+ */
+Generator.prototype.addDummyTeam = function () {
+    this.teams.push({
+        hashKey: '??',
+        name:    '?HtDummyTeam?'
     });
 };
 
@@ -114,13 +217,13 @@ Generator.prototype.generateClashes = function () {
 };
 
 /**
- * @name sort
+ * @name sortSchedule
  * @description
  * Todo
  */
-Generator.prototype.sort = function () {
+Generator.prototype.sortSchedule = function () {
     var scope = this;
-    var sorter = new Sorter(scope.schedule, scope.amountPitches);
+    var sorter = new Sorter(scope.schedule, scope.amountPitches, scope.teams);
     scope.schedule = sorter.run();
 };
 
@@ -238,51 +341,37 @@ Generator.prototype.evaluateHomeTeam = function (primaryTeam, opponentTeam) {
  * @param pot
  * @constructor
  */
-function Sorter(pot, pitches) {
+function Sorter(pot, pitches, teams) {
     this.gamePot = pot;
     this.pitches = pitches;
+    this.teams = teams;
 
     this.schedule = [];
+    this.pointer = 0;
 
     this.indexCounter = 1;
     this.roundCounter = 0;
 }
+
+//Sorter.prototype.getAmountRounds = function () {
+//    return this.gamePot.length / this.pitches;
+//};
 
 /**
  * @name run
  */
 Sorter.prototype.run = function () {
     var scope = this;
+    //console.log('--------------------------------------------------------------------------------');
+    //log.info('Pitches', scope.pitches);
+    //log.info('Gamepot', scope.gamePot.length);
+    //console.log('--------------------------------------------------------------------------------');
 
     while (scope.gamePot.length !== 0) {
-        console.log('--------------------------------------------------------------------------------');
-        log.info('Gamepot', scope.gamePot.length);
-        scope.buildRound()
+        scope.buildRound();
     }
 
     return scope.schedule;
-};
-
-/**
- * @name buildRound
- */
-Sorter.prototype.buildRound = function () {
-    var scope = this;
-
-    scope.roundCounter++;
-    log.info('Round', scope.roundCounter);
-
-    for (var g = 0; g < scope.pitches; g++) {
-        log.info('Game', g);
-        var gameIndex = scope.findNextDifferentGame();
-
-        if(gameIndex !== -1){
-            scope.add(gameIndex);
-        }else{
-            scope.add(0);
-        }
-    }
-
 
 };
 
@@ -291,9 +380,8 @@ Sorter.prototype.buildRound = function () {
  * @param index
  */
 Sorter.prototype.add = function (index) {
-    log.info('add', index);
     var scope = this;
-    index = (index) ? index : 0;
+    index = index || 0;
 
     scope.gamePot[index].id = scope.indexCounter++;
     scope.gamePot[index].round = scope.roundCounter;
@@ -305,42 +393,118 @@ Sorter.prototype.add = function (index) {
 };
 
 /**
- * @name next
+ * @name buildRound
  */
-Sorter.prototype.next = function () {
-
-
-};
-
-/**
- * @name findNextDifferentGame
- */
-Sorter.prototype.findNextDifferentGame = function (index) {
-
-    // TODO check round amount to fit. get teams that didnt play the round before
-
-    index = index || 0;
+Sorter.prototype.buildRound = function () {
     var scope = this;
-    var gamesInTheCurrentRound = _.where(scope.schedule, {
-        round: scope.roundCounter
-    });
 
-    // First run just returns the first clash
-    if (gamesInTheCurrentRound.length === 0) {
-        return 0;
+    scope.roundCounter++;
+    //log.info('Round', scope.roundCounter);
+
+    scope.add(scope.gamePot.length - 1);
+    var finder = scope.getGameFinder();
+    finder.refresh();
+
+    var pitchesCounter = scope.pitches - 1;
+    while (pitchesCounter !== 0) {
+
+        var gameIndex = finder.next();
+        scope.add(gameIndex);
+        finder.refresh();
+        pitchesCounter--;
+
     }
 
-    // find a different game
-    var diffrentGames = _.filter(scope.gamePot, function (game) {
-        return !scope.hasTeam(gamesInTheCurrentRound, game);
-    });
+};
 
-    return _.indexOf(scope.gamePot, diffrentGames[index]);
+/**
+ * @name getGameFinder
+ * @returns {GameFinder}
+ */
+Sorter.prototype.getGameFinder = function () {
+    var scope = this;
+
+    var GameFinder = function GameFinder() {
+        this.list = [];
+        this.lastRoundList = [];
+        this.pointer = 0;
+    };
+
+    GameFinder.prototype.next = function () {
+        this.pointer = 0;
+
+        // Gets the a clash with the team that played at least
+        if (scope.roundCounter > 1) {
+            var teams = [];
+
+            // Generates a team array, but without the dummy
+            _.each(scope.teams, function (team) {
+                if (team.hashKey !== '??') {
+                    teams.push({
+                        hashKey: team.hashKey,
+                        counter: 0
+                    });
+                }
+            });
+
+            // Counts the amount of plays
+            _.each(scope.schedule, function (game) {
+                teams = _.map(teams, function (team) {
+                    if (game.home.team !== '??' && game.away.team !== '??') {
+                        team.counter = (game.home.team === team.hashKey || game.away.team === team.hashKey)
+                            ? (team.counter + 1)
+                            : team.counter;
+                    }
+                    return team;
+                });
+            });
+
+            // Gets the team with the minimum of plays
+            var teamWithWhoPlayedAtLeast = _.min(teams, function (team) {
+                return team.counter;
+            });
+
+            // Finds a game with this team
+            var game = _.find(this.list, function (game) {
+                return game.home.team === teamWithWhoPlayedAtLeast.hashKey
+                    || game.away.team === teamWithWhoPlayedAtLeast.hashKey;
+            });
+
+            // Gets the index of this game
+            this.pointer = _.indexOf(this.list, game);
+
+        }
+
+        var index = _.indexOf(scope.gamePot, this.list[this.pointer]);
+        return (index >= 0)
+            ? index
+            : 0;
+    };
+
+    GameFinder.prototype.refresh = function () {
+        var listOfGamesInTheCurrentRound = _.where(scope.schedule, {
+            round: scope.roundCounter
+        });
+
+        listOfGamesInTheCurrentRound = _.filter(listOfGamesInTheCurrentRound, function (game) {
+            return (game.home.team !== '??' && game.away.team !== '??' );
+        });
+
+        this.list = _.filter(scope.gamePot, function (game) {
+            return !scope.hasTeam(listOfGamesInTheCurrentRound, game);
+        });
+
+    };
+
+    return new GameFinder;
 
 };
 
 /**
- * @name next
+ * @name hasTeam
+ * @param pot
+ * @param game
+ * @returns {boolean}
  */
 Sorter.prototype.hasTeam = function (pot, game) {
     var result = _.find(pot, function (clash) {
@@ -350,17 +514,6 @@ Sorter.prototype.hasTeam = function (pot, game) {
 
     return result !== undefined;
 };
-
-///**
-// * @name next
-// */
-//Sorter.prototype.hasClash = function (pot, game) {
-//    var result = _.find(pot, function (clash) {
-//        return (clash.home.team === game.home.team && clash.away.team === game.away.team);
-//    });
-//
-//    return result !== undefined;
-//};
 
 /**
  * @name rebuildArray
