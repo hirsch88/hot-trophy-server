@@ -24,6 +24,7 @@
     "passport-http": "^0.2.2",
     "passport-http-bearer": "^1.0.1",
     "q": "^1.2.0",
+    "roundrobin": "^1.0.2",
     "superagent": "^0.21.0",
     "underscore": "^1.8.2"
   },
